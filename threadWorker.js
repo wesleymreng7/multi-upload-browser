@@ -38,10 +38,6 @@ const ObjectTranform = {
         }
     },
 
-    flush() {
-
-    }
-
 }
 
 let loaded = 0
@@ -57,8 +53,6 @@ const ProgressTransform = {
         controller.enqueue(chunk)
         postMessage({ progressLoaded: loaded, progressSent: sent, index: fileIndex })
     },
-    flush() {
-    }
 }
 
 
