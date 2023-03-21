@@ -40,15 +40,17 @@ const ObjectTranform = {
 
 }
 
-let loaded = 0
-let sent = 0
+let readableStream = null
+let fileIndex = null
+let bytesLoaded = 0
+let linesSent = 0
 const objectsToSend = []
 
 const ProgressTransform = {
     transform(chunk, controller) {
-        loaded += chunk.length
+        bytesLoaded += chunk.length
         controller.enqueue(chunk)
-        postMessage({ progressLoaded: loaded, progressSent: sent, index: fileIndex })
+        postMessage({ progressLoaded: bytesLoaded, progressSent: linesSent, index: fileIndex })
     },
 }
 
@@ -57,8 +59,8 @@ const ProgressTransform = {
 const postRequest = async data => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
-            sent++
-            postMessage({ progressSent: sent, progressLoaded: loaded, index: fileIndex })
+            linesSent++
+            postMessage({ progressSent: linesSent, progressLoaded: bytesLoaded, index: fileIndex })
             resolve(data)
         }, 0)
     })
@@ -70,7 +72,7 @@ const writable = new WritableStream({
         objectsToSend.push(await postRequest(JSON.parse(chunk)))
     },
     async close() {
-        postMessage({ totalToSend: objectsToSend.length, index: fileIndex, progressLoaded: loaded, progressSent: sent })
+        postMessage({ totalToSend: objectsToSend.length, index: fileIndex, progressLoaded: bytesLoaded, progressSent: linesSent })
         await Promise.all(objectsToSend)
     },
     abort(err) {
@@ -78,12 +80,9 @@ const writable = new WritableStream({
     },
 })
 
-let readableStream = null
-let fileIndex = null
-
 addEventListener("message", event => {
-    fileIndex = event.data.index
-    readableStream = event?.data?.file?.stream()
+    fileIndex = event.data?.index
+    readableStream = event.data?.file?.stream()
     readableStream
         .pipeThrough(new TransformStream(ProgressTransform))
         .pipeThrough(new TransformStream(ObjectTranform))

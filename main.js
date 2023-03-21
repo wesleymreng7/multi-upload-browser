@@ -2,8 +2,20 @@ const input = document.getElementById('files')
 const progress = document.getElementById('progress')
 
 
+
+const formatBytes = (bytes, decimals = 2) => {
+    if (!+bytes) return '0 Bytes'
+
+    const k = 1024
+    const dm = decimals < 0 ? 0 : decimals
+    const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+}
+
 input.addEventListener('change', async (e) => {
-    const stream = e.target.files[0].stream()
     const files = e.target.files
     const workersInfo = []
 
@@ -27,15 +39,15 @@ input.addEventListener('change', async (e) => {
                                 <th>File</th>
                                 <th>File Size</th>
                                 <th>Loaded</th>
-                                <th>Sent</th>
+                                <th>Lines Sent</th>
                             </tr>    
                         </thead>
                         <tbody>
                             ${workersInfo.map(info =>
                     `<tr>
                                     <td>${info.fileName}</td>
-                                    <td>${info.fileSize}</td>
-                                    <td>${info.progressLoaded}</td>
+                                    <td>${formatBytes(info.fileSize)}</td>
+                                    <td>${formatBytes(info.progressLoaded)}</td>
                                     <td>${info.progressSent}</td>
                                 </tr>`
                 )}
