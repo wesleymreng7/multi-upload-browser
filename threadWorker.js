@@ -45,9 +45,6 @@ let sent = 0
 const objectsToSend = []
 
 const ProgressTransform = {
-
-    percentage: 0,
-
     transform(chunk, controller) {
         loaded += chunk.length
         controller.enqueue(chunk)
