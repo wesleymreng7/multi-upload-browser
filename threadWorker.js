@@ -1,3 +1,10 @@
+let readableStream = null
+let fileIndex = null
+let bytesLoaded = 0
+let linesSent = 0
+const objectsToSend = []
+
+
 const ObjectTranform = {
     headerLine: true,
     keys: [],
@@ -40,12 +47,6 @@ const ObjectTranform = {
 
 }
 
-let readableStream = null
-let fileIndex = null
-let bytesLoaded = 0
-let linesSent = 0
-const objectsToSend = []
-
 const ProgressTransform = {
     transform(chunk, controller) {
         bytesLoaded += chunk.length
@@ -55,6 +56,18 @@ const ProgressTransform = {
 }
 
 
+const PostRequestWritable = {
+    async write(chunk) {
+        objectsToSend.push(await postRequest(JSON.parse(chunk)))
+    },
+    async close() {
+        postMessage({ totalToSend: objectsToSend.length, index: fileIndex, progressLoaded: bytesLoaded, progressSent: linesSent })
+        await Promise.all(objectsToSend)
+    },
+    abort(err) {
+        console.log("Sink error:", err);
+    },
+}
 
 const postRequest = async data => {
     return new Promise((resolve, reject) => {
@@ -67,18 +80,6 @@ const postRequest = async data => {
 }
 
 
-const writable = new WritableStream({
-    async write(chunk) {
-        objectsToSend.push(await postRequest(JSON.parse(chunk)))
-    },
-    async close() {
-        postMessage({ totalToSend: objectsToSend.length, index: fileIndex, progressLoaded: bytesLoaded, progressSent: linesSent })
-        await Promise.all(objectsToSend)
-    },
-    abort(err) {
-        console.log("Sink error:", err);
-    },
-})
 
 addEventListener("message", event => {
     fileIndex = event.data?.index
@@ -86,5 +87,5 @@ addEventListener("message", event => {
     readableStream
         .pipeThrough(new TransformStream(ProgressTransform))
         .pipeThrough(new TransformStream(ObjectTranform))
-        .pipeTo(writable)
+        .pipeTo(new WritableStream(PostRequestWritable))
 })
