@@ -40,7 +40,9 @@ input.addEventListener('change', async (e) => {
                                 <th>File Size</th>
                                 <th>Loaded</th>
                                 <th></th>
+                                <th>Total Lines</th>
                                 <th>Lines Sent</th>
+                                <th></th>
                             </tr>    
                         </thead>
                         <tbody>
@@ -50,7 +52,9 @@ input.addEventListener('change', async (e) => {
                                     <td>${formatBytes(info.fileSize)}</td>
                                     <td>${formatBytes(info.progressLoaded)}</td>
                                     <td><progress value="${Math.ceil(info.progressLoaded / info.fileSize * 100)}" max="100"> 32% </progress></td>
+                                    <td>${info.totalToSend}</td>
                                     <td>${info.progressSent}</td>
+                                    <td><progress value="${Math.ceil(info.progressSent / info.totalToSend * 100)}" max="100"> 32% </progress></td>
                                 </tr>`
                 )}
                         </tbody>

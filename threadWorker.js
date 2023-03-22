@@ -3,6 +3,9 @@ let fileIndex = null
 let bytesLoaded = 0
 let linesSent = 0
 const objectsToSend = []
+let fileLoaded = false
+const readyEvent = new Event('ready')
+
 
 
 const ObjectTranform = {
@@ -51,18 +54,23 @@ const ProgressTransform = {
     transform(chunk, controller) {
         bytesLoaded += chunk.length
         controller.enqueue(chunk)
-        postMessage({ progressLoaded: bytesLoaded, progressSent: linesSent, index: fileIndex })
+        postMessage({ progressLoaded: bytesLoaded, progressSent: linesSent, index: fileIndex, totalToSend: 0 })
     },
+    flush() {
+        fileLoaded = true
+    }
 }
 
 
-const PostRequestWritable = {
+const MyWritable = {
     async write(chunk) {
-        objectsToSend.push(await postRequest(JSON.parse(chunk)))
+        objectsToSend.push(postRequest(JSON.parse(chunk)))
     },
     async close() {
-        postMessage({ totalToSend: objectsToSend.length, index: fileIndex, progressLoaded: bytesLoaded, progressSent: linesSent })
-        await Promise.all(objectsToSend)
+        if (fileLoaded) {
+            postMessage({ totalToSend: objectsToSend.length, index: fileIndex, progressLoaded: bytesLoaded, progressSent: linesSent })
+            dispatchEvent(readyEvent)
+        }
     },
     abort(err) {
         console.log("Sink error:", err);
@@ -73,12 +81,16 @@ const postRequest = async data => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             linesSent++
-            postMessage({ progressSent: linesSent, progressLoaded: bytesLoaded, index: fileIndex })
+            postMessage({ totalToSend: objectsToSend.length, progressSent: linesSent, progressLoaded: bytesLoaded, index: fileIndex })
             resolve(data)
-        }, 0)
+        }, 3000)
     })
 }
 
+
+addEventListener('ready', async () => {
+    await Promise.all(objectsToSend)
+})
 
 
 addEventListener("message", event => {
@@ -87,5 +99,5 @@ addEventListener("message", event => {
     readableStream
         .pipeThrough(new TransformStream(ProgressTransform))
         .pipeThrough(new TransformStream(ObjectTranform))
-        .pipeTo(new WritableStream(PostRequestWritable))
+        .pipeTo(new WritableStream(MyWritable))
 })
