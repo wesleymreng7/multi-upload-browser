@@ -3,7 +3,7 @@ let fileIndex = null
 let bytesLoaded = 0
 let linesSent = 0
 const objectsToSend = []
-let fileLoaded = false
+let fileCompletelyLoaded = false
 const readyEvent = new Event('ready')
 
 
@@ -57,17 +57,17 @@ const ProgressTransform = {
         postMessage({ progressLoaded: bytesLoaded, progressSent: linesSent, index: fileIndex, totalToSend: 0 })
     },
     flush() {
-        fileLoaded = true
+        fileCompletelyLoaded = true
     }
 }
 
 
 const MyWritable = {
-    async write(chunk) {
+    write(chunk) {
         objectsToSend.push(postRequest(JSON.parse(chunk)))
     },
-    async close() {
-        if (fileLoaded) {
+    close() {
+        if (fileCompletelyLoaded) {
             postMessage({ totalToSend: objectsToSend.length, index: fileIndex, progressLoaded: bytesLoaded, progressSent: linesSent })
             dispatchEvent(readyEvent)
         }
