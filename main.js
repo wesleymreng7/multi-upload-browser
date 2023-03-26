@@ -40,8 +40,8 @@ input.addEventListener('change', async (e) => {
                                 <th>File Size</th>
                                 <th>Loaded</th>
                                 <th></th>
-                                <th>Total Lines</th>
-                                <th>Lines Sent</th>
+                                <th>Total Rows</th>
+                                <th>Rows Sent</th>
                                 <th></th>
                             </tr>    
                         </thead>
